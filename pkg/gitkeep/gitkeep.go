@@ -12,14 +12,25 @@ import (
 
 // ManageGitkeepFiles manages .gitkeep files in the specified repository
 func ManageGitkeepFiles(repoPath string) error {
+	// Convert repoPath to absolute path to handle relative paths correctly
+	absRepoPath, err := filepath.Abs(repoPath)
+	if err != nil {
+		return err
+	}
+
 	return filepath.WalkDir(repoPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err // Propagate the error upwards
 		}
 
-		// Skip non-directory entries and the .git directory
-		if !d.IsDir() || strings.HasSuffix(path, "/.git") {
+		// Skip non-directory entries
+		if !d.IsDir() {
 			return nil
+		}
+
+		// Check if the path is inside the .git directory
+		if isInsideGitDir(absRepoPath, path) {
+			return filepath.SkipDir // Skip the .git directory and its subdirectories
 		}
 
 		// Check if the directory is ignored by Git
@@ -56,6 +67,15 @@ func ManageGitkeepFiles(repoPath string) error {
 
 		return nil
 	})
+}
+
+// isInsideGitDir checks if a given path is inside the .git directory
+func isInsideGitDir(repoPath, path string) bool {
+	relPath, err := filepath.Rel(repoPath, path)
+	if err != nil {
+		return false
+	}
+	return strings.HasPrefix(relPath, ".git") || strings.Contains(relPath, "/.git/")
 }
 
 // isDirEmpty checks if the given directory is empty
