@@ -3,8 +3,6 @@ package gitutils
 import (
 	"os/exec"
 	"path/filepath"
-
-	"github.com/go-git/go-git/v5"
 )
 
 // CheckIfGitRepo checks if the given path is within a Git repository
@@ -13,9 +11,11 @@ func CheckIfGitRepo(path string) (bool, string) {
 
 	originalPath := path
 	for depth := 0; depth < maxDepth; depth++ {
-		_, err := git.PlainOpen(path)
-		if err == nil {
-			return true, path // Found a Git repository, return its path
+		// Using 'git rev-parse --is-inside-work-tree' to check if inside a git repository
+		cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+		cmd.Dir = path
+		if err := cmd.Run(); err == nil {
+			return true, path // Found a Git repository
 		}
 
 		if path == "/" || path == "." {
@@ -26,7 +26,7 @@ func CheckIfGitRepo(path string) (bool, string) {
 		path = filepath.Dir(path)
 	}
 
-	return false, originalPath // Not a Git repository, return original path
+	return false, originalPath // Not a Git repository
 }
 
 // IsGitInstalled checks if Git is installed and available in the system
