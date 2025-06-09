@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/raulviigipuu/gitkeep/internal/gitutils"
+	"github.com/raulviigipuu/gitkeep/internal/logx"
 )
 
 // ManageGitkeepFiles manages .gitkeep files in the specified repository
@@ -61,7 +62,7 @@ func ManageGitkeepFiles(repoPath string) error {
 				if err := os.Remove(gitkeepPath); err != nil {
 					return err
 				}
-				fmt.Printf("🧹 Removed .gitkeep from: %s\n", path)
+				logx.Info(fmt.Sprintf("🧹 Removed .gitkeep from: %s\n", path))
 			}
 		}
 
