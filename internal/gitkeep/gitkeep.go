@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/raulviigipuu/gitkeep/pkg/gitutils"
+	"github.com/raulviigipuu/gitkeep/internal/gitutils"
 )
 
 // ManageGitkeepFiles manages .gitkeep files in the specified repository

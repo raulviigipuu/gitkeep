@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/raulviigipuu/gitkeep/pkg/gitkeep"
-	"github.com/raulviigipuu/gitkeep/pkg/gitutils"
+	"github.com/raulviigipuu/gitkeep/internal/gitkeep"
+	"github.com/raulviigipuu/gitkeep/internal/gitutils"
 )
 
 func main() {
