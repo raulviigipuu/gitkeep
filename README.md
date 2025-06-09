@@ -4,6 +4,7 @@ CLI utility to add and remove .gitkeep files to directories.
 ## run
 
     go run ./cmd/gitkeep/main.go /path/to/directory
+    
     gitkeep /path/to/directory (default ".")
 
 
@@ -13,7 +14,7 @@ CLI utility to add and remove .gitkeep files to directories.
 
 Or manually change this line in go.mod:
 
-    go 1.22
+    go 1.23
 
 ### upgrade dependencies
 
