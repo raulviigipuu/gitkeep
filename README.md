@@ -1,11 +1,17 @@
 # gitkeep
 CLI utility to add and remove .gitkeep files to directories.
 
+## build
+
+    go build -o gitkeep ./cmd/gitkeep
+
 ## run
 
     go run ./cmd/gitkeep/main.go /path/to/directory
     
     gitkeep /path/to/directory (default ".")
+
+    gitkeep -v
 
 
 ## maintenance

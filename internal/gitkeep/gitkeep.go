@@ -55,14 +55,14 @@ func ManageGitkeepFiles(repoPath string) error {
 			if err := os.WriteFile(gitkeepPath, nil, 0644); err != nil {
 				return err
 			}
-			fmt.Printf("✨ Created .gitkeep in: %s\n", path)
+			logx.Info(fmt.Sprintf("✨ Created .gitkeep in: %s", path))
 		} else {
 			// Remove .gitkeep file if the directory is not empty
 			if _, err := os.Stat(gitkeepPath); err == nil {
 				if err := os.Remove(gitkeepPath); err != nil {
 					return err
 				}
-				logx.Info(fmt.Sprintf("🧹 Removed .gitkeep from: %s\n", path))
+				logx.Info(fmt.Sprintf("🧹 Removed .gitkeep from: %s", path))
 			}
 		}
 
