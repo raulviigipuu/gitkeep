@@ -2,7 +2,6 @@ package gitkeep
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,81 +10,79 @@ import (
 	"github.com/raulviigipuu/gitkeep/internal/logx"
 )
 
-// ManageGitkeepFiles manages .gitkeep files in the specified repository
 func ManageGitkeepFiles(repoPath string) error {
-	// Convert repoPath to absolute path to handle relative paths correctly
 	absRepoPath, err := filepath.Abs(repoPath)
 	if err != nil {
 		return err
 	}
 
-	return filepath.WalkDir(repoPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err // Propagate the error upwards
-		}
+	return checkAndManageDirectory(absRepoPath, absRepoPath)
+}
 
-		// Skip non-directory entries
-		if !d.IsDir() {
-			return nil
-		}
+func checkAndManageDirectory(currentPath, repoRoot string) error {
+	// Normalize and skip .git folder (Windows-safe)
+	relPath, err := filepath.Rel(repoRoot, currentPath)
+	if err != nil {
+		return err
+	}
+	relPath = filepath.ToSlash(relPath)
+	lowerPath := strings.ToLower(relPath)
+	if lowerPath == ".git" || strings.HasPrefix(lowerPath, ".git/") {
+		return nil // skip .git dir
+	}
 
-		// Check if the path is inside the .git directory
-		if isInsideGitDir(absRepoPath, path) {
-			return filepath.SkipDir // Skip the .git directory and its subdirectories
-		}
+	// Check if ignored by Git
+	isIgnored, err := gitutils.IsPathIgnored(currentPath)
+	if err != nil {
+		return err
+	}
+	if isIgnored {
+		return nil // skip ignored dirs
+	}
 
-		// Check if the directory is ignored by Git
-		isIgnored, err := gitutils.IsPathIgnored(path)
-		if err != nil {
-			return err
-		}
-		if isIgnored {
-			return nil // Skip ignored directories
-		}
+	// Read dir entries
+	entries, err := os.ReadDir(currentPath)
+	if err != nil {
+		return err
+	}
 
-		// Check if the directory is empty
-		isEmpty, err := isDirEmpty(path)
-		if err != nil {
-			return err
+	isEmpty := true
+	for _, entry := range entries {
+		if entry.Name() == ".gitkeep" || strings.ToLower(entry.Name()) == "thumbs.db" {
+			continue
 		}
+		isEmpty = false
+		break
+	}
 
-		gitkeepPath := filepath.Join(path, ".gitkeep")
-		if isEmpty {
-			// Add .gitkeep file if the directory is empty
-			if err := os.WriteFile(gitkeepPath, nil, 0644); err != nil {
+	gitkeepPath := filepath.Join(currentPath, ".gitkeep")
+	if isEmpty {
+		// Add .gitkeep if not exists
+		if _, err := os.Stat(gitkeepPath); os.IsNotExist(err) {
+			err := os.WriteFile(gitkeepPath, nil, 0644)
+			if err != nil {
 				return err
 			}
-			logx.Info(fmt.Sprintf("✨ Created .gitkeep in: %s", path))
-		} else {
-			// Remove .gitkeep file if the directory is not empty
-			if _, err := os.Stat(gitkeepPath); err == nil {
-				if err := os.Remove(gitkeepPath); err != nil {
-					return err
-				}
-				logx.Info(fmt.Sprintf("🧹 Removed .gitkeep from: %s", path))
+			logx.Info(fmt.Sprintf("✨ Created .gitkeep in: %s", currentPath))
+		}
+	} else {
+		// Remove if exists
+		if _, err := os.Stat(gitkeepPath); err == nil {
+			if err := os.Remove(gitkeepPath); err != nil {
+				return err
+			}
+			logx.Info(fmt.Sprintf("🧹 Removed .gitkeep from: %s", currentPath))
+		}
+	}
+
+	// Recurse into subdirectories
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if err := checkAndManageDirectory(filepath.Join(currentPath, entry.Name()), repoRoot); err != nil {
+				return err
 			}
 		}
-
-		return nil
-	})
-}
-
-// isInsideGitDir checks if a given path is inside the .git directory
-func isInsideGitDir(repoPath, path string) bool {
-	relPath, err := filepath.Rel(repoPath, path)
-	if err != nil {
-		return false
-	}
-	return strings.HasPrefix(relPath, ".git") || strings.Contains(relPath, "/.git/")
-}
-
-// isDirEmpty checks if the given directory is empty
-func isDirEmpty(path string) (bool, error) {
-	files, err := os.ReadDir(path)
-	if err != nil {
-		return false, err
 	}
 
-	// Consider a directory empty if it only contains a .gitkeep file
-	return len(files) == 0 || (len(files) == 1 && files[0].Name() == ".gitkeep"), nil
+	return nil
 }
